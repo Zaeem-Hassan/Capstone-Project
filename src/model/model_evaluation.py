@@ -144,6 +144,7 @@ def main():
         except Exception as e:
             logging.error('Failed to complete the model evaluation process: %s', e)
             print(f"Error: {e}")
+            raise  # Re-raise so DVC knows the step failed
 
 if __name__ == '__main__':
     main()
