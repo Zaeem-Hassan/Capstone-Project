@@ -21,7 +21,7 @@ if not dagshub_token:
 os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
 os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
 
-dagshub_url = "https://dagshub.com/Zaeem-Hassan/Capstone-Project.mlflow"
+dagshub_url = "https://dagshub.com"
 repo_owner = "Zaeem-Hassan"
 repo_name = "Capstone-Project"
 
@@ -119,6 +119,7 @@ def main():
 
             metrics = evaluate_model(clf, X_test, y_test)
             
+            os.makedirs('reports', exist_ok=True)
             save_metrics(metrics, 'reports/metrics.json')
             
             # Log metrics to MLflow
