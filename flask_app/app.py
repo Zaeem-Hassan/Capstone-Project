@@ -67,27 +67,17 @@ def normalize_text(text):
 
     return text
 
-# Below code block is for local use
-# -------------------------------------------------------------------------------------
-mlflow.set_tracking_uri('https://dagshub.com/Zaeem-Hassan/Capstone-Project.mlflow')
-dagshub.init(repo_owner='Zaeem-Hassan', repo_name='Capstone-Project', mlflow=True)
-# -------------------------------------------------------------------------------------
-
-# Below code block is for production use
-# -------------------------------------------------------------------------------------
-# Set up DagsHub credentials for MLflow tracking
-# dagshub_token = os.getenv("CAPSTONE_TEST")
-# if not dagshub_token:
-#     raise EnvironmentError("CAPSTONE_TEST environment variable is not set")
-
-# os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
-# os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
-
-# dagshub_url = "https://dagshub.com"
-# repo_owner = "vikashdas770"
-# repo_name = "YT-Capstone-Project"
-# Set up MLflow tracking URI
-# mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
+# Smart DagsHub/MLflow authentication - works in both CI and local
+dagshub_token = os.getenv("CAPSTONE_TEST")
+if dagshub_token:
+    # Production/CI: use token-based auth
+    os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
+    os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
+    mlflow.set_tracking_uri('https://dagshub.com/Zaeem-Hassan/Capstone-Project.mlflow')
+else:
+    # Local development: use interactive auth
+    mlflow.set_tracking_uri('https://dagshub.com/Zaeem-Hassan/Capstone-Project.mlflow')
+    dagshub.init(repo_owner='Zaeem-Hassan', repo_name='Capstone-Project', mlflow=True)
 # -------------------------------------------------------------------------------------
 
 
@@ -115,10 +105,21 @@ PREDICTION_COUNT = Counter(
 model_name = "my_model"
 def get_latest_model_version(model_name):
     client = mlflow.MlflowClient()
-    latest_version = client.get_latest_versions(model_name, stages=["Production"])
-    if not latest_version:
-        latest_version = client.get_latest_versions(model_name, stages=["None"])
-    return latest_version[0].version if latest_version else None
+    try:
+        # Try production alias first
+        model_version = client.get_model_version_by_alias(model_name, "production")
+        return model_version.version
+    except Exception:
+        try:
+            # Try staging alias
+            model_version = client.get_model_version_by_alias(model_name, "staging")
+            return model_version.version
+        except Exception:
+            # Fallback: get the latest version
+            versions = client.search_model_versions(f"name='{model_name}'")
+            if versions:
+                return max(v.version for v in versions)
+            return None
 
 model_version = get_latest_model_version(model_name)
 model_uri = f'models:/{model_name}/{model_version}'
