@@ -51,6 +51,20 @@ jobs:
           CAPSTONE_TEST: ${{ secrets.CAPSTONE_TEST }}
         run: python -m unittest tests/test_flask_app.py
 
+      - name: Debug - Check AWS secrets
+        if: success()
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        run: |
+          echo "Checking if secrets are set (shows 'SET' or 'EMPTY'):"
+          [ -n "$AWS_ACCESS_KEY_ID" ] && echo "AWS_ACCESS_KEY_ID: SET" || echo "AWS_ACCESS_KEY_ID: EMPTY"
+          [ -n "$AWS_REGION" ] && echo "AWS_REGION: SET" || echo "AWS_REGION: EMPTY"
+          [ -n "$AWS_ACCOUNT_ID" ] && echo "AWS_ACCOUNT_ID: SET" || echo "AWS_ACCOUNT_ID: EMPTY"
+          [ -n "$ECR_REPOSITORY" ] && echo "ECR_REPOSITORY: SET" || echo "ECR_REPOSITORY: EMPTY"
+
       - name: Login to AWS ECR
         if: success()
         env:
